@@ -1,0 +1,43 @@
+import discord
+from discord.ext import commands
+from discord import app_commands
+
+intents = discord.Intents.default()
+intents.members = True  # Enable member join tracking
+
+bot = commands.Bot(command_prefix="!", intents=intents)
+tree = bot.tree
+
+rules_text = "No rules set yet."  # Default rules
+
+@bot.event
+async def on_ready():
+    print(f"Logged in as {bot.user}")
+    try:
+        synced = await tree.sync()
+        print(f"Synced {len(synced)} command(s)")
+    except Exception as e:
+        print(e)
+
+@tree.command(name="rules", description="Set the server rules")
+@app_commands.describe(rules="The rules to display when a user joins")
+async def set_rules(interaction: discord.Interaction, rules: str):
+    global rules_text
+    rules_text = rules
+    await interaction.response.send_message("Rules updated!", ephemeral=True)
+
+@tree.command(name="welcome", description="Activate welcome message in this channel")
+async def welcome(interaction: discord.Interaction):
+    channel_id = interaction.channel.id
+
+    @bot.event
+    async def on_member_join(member):
+        channel = bot.get_channel(channel_id)
+        if channel:
+            await channel.send(
+                f"Welcome to **{member.guild.name}**, {member.mention}!\n\n{rules_text}"
+            )
+
+    await interaction.response.send_message("Welcome message will now be sent here when users join.", ephemeral=True)
+
+bot.run("MTM2OTI5ODU3NTc4MzM2NjY3Nw.GgYJT8.Ba5aCgbNmFZ_jiY4t2nRr0dlS1sda08aydteqA")
